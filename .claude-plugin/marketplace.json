@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
+  "name": "initial-research-tool",
+  "description": "The research group's literature-review tooling for Claude Code.",
+  "owner": {
+    "name": "Aristidas Končius"
+  },
+  "plugins": [
+    {
+      "name": "initial-literature-review",
+      "description": "First-pass literature review of an unfamiliar research area, from question to synthesis, with human gates.",
+      "source": "./",
+      "category": "productivity"
+    }
+  ]
+}

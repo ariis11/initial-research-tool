@@ -1,0 +1,12 @@
+{
+  "name": "initial-literature-review",
+  "version": "0.2.0",
+  "description": "First-pass literature review of an unfamiliar research area: multi-source gathering, banded screening with human audit, Zotero ingest, quote-verified extraction and synthesis.",
+  "author": {
+    "name": "Aristidas Končius"
+  },
+  "homepage": "https://github.com/ariis11/initial-research-tool",
+  "repository": "https://github.com/ariis11/initial-research-tool",
+  "keywords": ["literature-review", "research", "zotero", "openalex", "semantic-scholar", "arxiv", "phd"],
+  "skills": "./skills/"
+}
