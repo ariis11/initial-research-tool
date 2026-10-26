@@ -121,8 +121,8 @@ def cmd_emit(rows, a):
         return 0
     out = a.out or (a.thread / "screening")
     out.mkdir(parents=True, exist_ok=True)
-    for f in out.glob("batch-*.json"):
-        f.unlink()
+    for f in out.glob("batch-*.json"):   # stale batches from an earlier --emit;
+        f.unlink()                       # decisions-*.json files are kept
     n = 0
     for i in range(0, len(todo), a.batch_size):
         chunk = todo[i:i + a.batch_size]
@@ -150,6 +150,13 @@ def cmd_emit(rows, a):
 def cmd_apply(rows, a):
     decisions = []
     for p in a.apply:
+        if str(p).lower().endswith(".csv"):
+            # audit.csv after Gate B: whatever band the human left in each row
+            # is the decision. Unchanged rows re-apply their own band, which is
+            # harmless; changed ones overturn the agent.
+            decisions += [{"bibkey": r["bibkey"], "band": r.get("band", ""),
+                           "reason": r.get("reason", "")} for r in c.read_rows(Path(p))]
+            continue
         data = json.loads(Path(p).read_text(encoding="utf-8"))
         decisions += data if isinstance(data, list) else data.get("decisions", [])
     by_key = {r["bibkey"]: r for r in rows}
@@ -161,6 +168,8 @@ def cmd_apply(rows, a):
         if band not in BANDS:
             bad.append((key, band)); continue
         r = by_key[key]
+        if r.get("band") == band and (d.get("reason") or "").strip() == r.get("reason"):
+            continue
         r["band"], r["reason"] = band, (d.get("reason") or "").strip()
         r["screened_by"] = a.by
         r["screened_at"] = c.now_iso()
@@ -207,9 +216,10 @@ def cmd_audit(rows, a):
         if tot:
             c.log(f"  band {band} {BANDS[band]:11s} {n:5d} of {tot:5d}"
                   f"  ({int(AUDIT_RATE[band]*100)}%)")
-    c.log("\nRead audit.csv. For each row: does the reason hold? Overturn in the")
-    c.log("band column, then re-run --apply. Band 4 rows matter most — a paper")
-    c.log("wrongly dropped is invisible from here on.")
+    c.log("\nRead audit.csv. For each row: does the reason hold? Overturn it by")
+    c.log("editing the band (and reason) column, and give every band-3 row a")
+    c.log("final band 1, 2 or 4. Then:  screen.py --apply audit.csv --by <initials>")
+    c.log("Band 4 rows matter most — a paper wrongly dropped is invisible from here on.")
     return 0
 
 

@@ -4,7 +4,7 @@
 
 > **This file's job.** The **operating manual** for the method defined in `method.md` — the how, not the why. Read the definition first; it says when this process applies and when it doesn't. Steps 11–12 below (write, verify before submitting) sit *outside* the scoped initial-review process and are kept here because the group needs them somewhere.
 
-> **Where this and the scripts disagree, the scripts win.** This manual was written before the pipeline was automated. `SKILL.md` and `scripts/README.md` describe what the tools actually do.
+> **Where this and the scripts disagree, the scripts win.** This manual was written before the pipeline was automated. `workflow.md` (the step-by-step, with where every file is saved), `SKILL.md` and `scripts/README.md` describe what the tools actually do.
 
 **The design rule everything follows:** durable state lives in open, portable formats (Zotero, BibTeX, CSV, markdown in git). AI tools are interchangeable accelerators bolted on top. Tools die — Zotero shipped three major versions in 2026 and broke plugins each time — and nothing important should die with them.
 
@@ -20,7 +20,7 @@
 | 2 | **Candidates** | `research/threads/<thread>/candidates.csv` | One row per candidate found, with identifiers, metadata and provenance. Never deleted from | `gather.py`, `expand.py`, `add_ids.py` |
 | 3 | **Screening decisions** | the `band`, `reason`, `screened_by`, `screened_at` columns of `candidates.csv`; the human sample in `audit.csv` | band 1–4 + one-line reason + who + when | Human, AI-drafted (`screen.py`) |
 | 4 | **Ingest record** | `zotero_key` column of `candidates.csv` + `pdf-status.md` | Which accepted rows are in Zotero, and which still lack a PDF | `ingest.py` |
-| 5 | **The library** | **Zotero group library** | Bibliographic metadata, PDFs, highlights and annotations, collections, tags | Everyone |
+| 5 | **The library** | **Zotero**, your personal library unless the group agrees on a shared group one (see `setup.md` step 3) | Bibliographic metadata, PDFs, highlights and annotations, collections, tags | Everyone |
 | 6 | **Bibliography** | `research/library.bib` | Written from Zotero metadata under our own citation keys; what LaTeX reads | `bib.py` |
 | 7 | **Per-paper analysis** | `research/papers/<bibkey>.md` | YAML frontmatter (structured fields) + prose (reasoning, objections) | Human, AI-drafted |
 | 8 | **Comparison tables** | `research/papers/_index.csv` (generated) | Every paper's frontmatter as one table | Script — **never hand-edited** |
@@ -36,8 +36,8 @@
 
 | Install | Why |
 |---|---|
-| **Zotero 10** + join the **group library** | The library everyone shares |
-| **Better BibTeX** plugin | Stable pinned citation keys + auto-export of `library.bib` |
+| **Zotero** desktop with `zotero-cli` (see `setup.md`) | Where accepted papers and PDFs live |
+| **Better BibTeX** plugin (optional) | Nicer citation keys in the Zotero UI. **Never** use it to export `library.bib`: `bib.py` writes it |
 | **Zotero Connector** (browser) | Saves a paper *with its PDF* from a publisher page |
 | **LibKey Nomad** + **Unpaywall** (browser) | One click from a paywall to the copy your institution licenses |
 | **Zotero MCP** (`uv tool install zotero-mcp-server`, then `zotero-mcp setup`) | Gives Claude Code read access to the library, PDF text and annotations |

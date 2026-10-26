@@ -5,11 +5,11 @@ Reports which sources answer, and whether licensed ones recognise the
 institution. Run it on the institution VPN and off it: the difference IS the
 entitlement.
 
-Secrets are read from the environment and never printed. Set them in
-~/.ilr-env (chmod 600) and `source` it -- never paste a key into a chat,
-a commit, or a file inside the repository.
+Secrets are read from ~/.ilr-env (chmod 600), which every script loads by
+itself, and are never printed. Never paste a key into a chat, a commit, or a
+file inside a repository.
 
-  source ~/.ilr-env && python3 check_access.py
+  python3 check_access.py
 """
 from __future__ import annotations
 import json, os, sys, urllib.error, urllib.parse, urllib.request
@@ -39,6 +39,16 @@ def probe(label, url, headers=None, expect_json=True, note=""):
 
 
 def main() -> int:
+    print("\n— this machine —")
+    py = sys.version_info
+    print(f"{OK if py >= (3, 12) else NO}Python {py.major}.{py.minor:<27d}"
+          f"{'' if py >= (3, 12) else 'need 3.12 or newer -- see setup.md step 1'}")
+    try:
+        import yaml  # noqa: F401
+        print(f"{OK}PyYAML")
+    except ImportError:
+        print(f"{NO}PyYAML                           missing -- see setup.md step 1")
+
     print("\n— configuration —")
     print(f"{OK if c.MAILTO else NO}ILR_MAILTO                       "
           f"{c.MAILTO or 'NOT SET -- every other script will refuse to run'}")
@@ -67,9 +77,9 @@ def main() -> int:
         probe("Scopus Search API",
               "https://api.elsevier.com/content/search/scopus?query=TITLE(agent)&count=1",
               headers=h, note=f"(needs a {c.INSTITUTION} IP or insttoken)")
-        probe("ScienceDirect Search API",
+        probe("ScienceDirect Search (optional)",
               "https://api.elsevier.com/content/search/sciencedirect?query=agent&count=1",
-              headers=h)
+              headers=h, note="(not used by the scripts; FAIL here is harmless)")
 
     if wos := (os.environ.get("WOS_STARTER_API_KEY") or os.environ.get("WOS_API_KEY")):
         probe("Web of Science Starter",
@@ -111,13 +121,26 @@ def main() -> int:
         print(f"{WARN}could not determine outward IP")
 
     print("\n— Zotero —")
-    import subprocess
+    import shutil, subprocess
+    if not shutil.which("zotero-cli"):
+        print(f"{NO}zotero-cli not installed           see setup.md step 3")
+        return 0
+    if (os.environ.get("ZOTERO_LOCAL") or "").lower() not in ("true", "1", "yes"):
+        cfg = subprocess.run(["zotero-cli", "config"], capture_output=True, text=True, timeout=60)
+        if "ZOTERO_LOCAL=true" not in cfg.stdout:
+            print(f"{NO}zotero-cli is not in local mode   see setup.md step 3 (ZOTERO_LOCAL)")
     p = subprocess.run(["zotero-cli", "--json", "get", "recent", "--limit", "1"],
                        capture_output=True, text=True, timeout=60)
     try:
-        print(f"{OK}Zotero reachable" if json.loads(p.stdout).get("ok") else f"{NO}Zotero")
+        print(f"{OK}Zotero reachable (reads)" if json.loads(p.stdout).get("ok") else f"{NO}Zotero")
     except Exception:
-        print(f"{NO}Zotero not reachable (is the desktop app running?)")
+        print(f"{NO}Zotero not reachable              is the desktop app running, with "
+              "'Allow other applications' on?")
+    lib = subprocess.run(["zotero-cli", "library", "list"], capture_output=True, text=True, timeout=60)
+    first = next((ln.replace("*", "").strip("- ") for ln in lib.stdout.splitlines() if "libraryID" in ln or "**" in ln), "")
+    if first:
+        print(f"        papers will go to the current library; libraries: {first[:60]}")
+    print("        writes are not tested here: ingest.py --limit 1 --dry-run, then --limit 1")
     return 0
 
 

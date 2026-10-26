@@ -2,6 +2,8 @@
 
 *23 September 2026. How the method in `method.md` gets built.*
 
+> **Design notes, partly historical.** Written while the pipeline was being built. Where it disagrees with `workflow.md` or the scripts, they win.
+
 **Status: in use since September 2026 across four real threads.** See `scripts/README.md` for how to run each script and `../SKILL.md` for the order.
 
 **The build rule:** deterministic work is a script, judgement is the agent, and the human appears at five gates and nowhere else.
@@ -16,7 +18,7 @@
 | | **🚦 Gate A** — you approve it. Nothing runs before this. | | |
 | 2 | **Gather** — keyword APIs + citation walk + agent search. **Everything kept, no cap.** | script | `candidates.csv`, `queries.md` |
 | 3 | **Dedupe** — merge versions, assign the citation key | script | `candidates.csv` |
-| 4 | **Screen** — four bands + a reason each, title/abstract only | agent | `screened.csv`, `audit.csv` |
+| 4 | **Screen** — four bands + a reason each, title/abstract only | agent | `candidates.csv` (band columns), `audit.csv` |
 | | **🚦 Gate B** — you audit the sample. | | |
 | 5 | **Ingest** — add to Zotero, pin the key, tag, fetch PDFs | script | `pdf-status.md` |
 | | **🚦 Gate C** — you fetch the PDFs the machine couldn't, and do anything else needing a login or a GUI. | | |
@@ -66,7 +68,7 @@ research/
 │   ├── thread.md          the question and criteria
 │   ├── queries.md         every search run, appended, never rewritten
 │   ├── candidates.csv     everything found. never deleted from
-│   ├── screened.csv       + band, reason, who, when
+│   ├── (candidates.csv)   + band, reason, who, when — same file, more columns
 │   ├── audit.csv          the sample drawn for you
 │   ├── identifiers.txt    what went into Zotero
 │   ├── pdf-status.md      which items still have no PDF
@@ -109,7 +111,7 @@ This gets both halves right. Metadata comes from Zotero, so any correction made 
 
 ### The mapping is the bridge
 
-`ingest.py` records, for every paper, the pair `bibkey ↔ zotero_key`. That pair lives in `screened.csv` and in every extraction file's frontmatter, and it is what lets the two worlds talk:
+`ingest.py` records, for every paper, the pair `bibkey ↔ zotero_key`. That pair lives in `candidates.csv` and in every extraction file's frontmatter, and it is what lets the two worlds talk:
 
 - **Scripts** use `zotero_key` to ask Zotero for full text, annotations and metadata.
 - **Humans, files and LaTeX** use `bibkey` and never see the Zotero key.
@@ -117,7 +119,7 @@ This gets both halves right. Metadata comes from Zotero, so any correction made 
 ### End to end, one paper
 
 1. **Dedupe** generates `mir2023delegatable` from first author + year + title keyword. It goes into `candidates.csv`. Zotero has not been touched.
-2. **Screen** carries it into `screened.csv` and `audit.csv` unchanged.
+2. **Screen** carries it into `candidates.csv`'s band columns and `audit.csv` unchanged.
 3. **Ingest** runs `zotero-cli add doi 10.56553/popets-2023-0093`. Zotero creates the item and assigns `3QNXCRIJ`. The script records `mir2023delegatable ↔ 3QNXCRIJ`, and additionally writes `Citation Key: mir2023delegatable` into the item's Extra field — **as a convenience so the key is visible and searchable in the Zotero UI, not because anything depends on it.**
 4. **Extract** writes `research/papers/mir2023delegatable.md`, whose frontmatter carries both `bibkey` and `zotero_key`. `extract_prep.py` uses the Zotero key to pull the full text; the filename uses ours.
 5. **Index** builds `_index.csv` keyed on `bibkey`.

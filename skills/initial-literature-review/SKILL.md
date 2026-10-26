@@ -5,7 +5,7 @@ description: Run a first-pass literature review of an unfamiliar research area -
 
 # Initial literature review
 
-A repeatable way from *"we should look into X"* to a defensible map of the field around X: what exists, who works on it, how it divides, and what its own authors call open. The full definition is in `reference/method.md`. Read it before a first run, and check its "When not to use it" section against the request before starting.
+A repeatable way from *"we should look into X"* to a defensible map of the field around X: what exists, who works on it, how it divides, and what its own authors call open. The full definition is in `reference/method.md`; the step-by-step for humans, with where every file is saved, is `reference/workflow.md`. Read it before a first run, and check the request against the "When *not* to use it" section of `reference/method.md` before starting.
 
 **The rule everything follows:** deterministic work is a script, judgement is you (the agent), and the human decides at five gates. At a gate, **stop, show what is needed, and wait**. Never approve a gate on the human's behalf.
 
@@ -18,7 +18,7 @@ A repeatable way from *"we should look into X"* to a defensible map of the field
 
 ## Before the first run
 
-Run `python3 <skill-dir>/scripts/check_access.py`. If `ILR_MAILTO` is not set, or Zotero is unreachable, walk the user through `reference/setup.md`. Keys go in `~/.ilr-env`, typed by the user. **Never ask for a key in chat, and never write one into a file yourself.**
+Run `python3 <skill-dir>/scripts/check_access.py`. If `ILR_MAILTO` is not set, Python is older than 3.12, PyYAML is missing, or Zotero is unreachable, walk the user through `reference/setup.md` step by step. Keys go in `~/.ilr-env`, typed by the user. **Never ask for a key in chat, and never write one into a file yourself.**
 
 ## Always start with status
 
@@ -38,6 +38,8 @@ Copy `templates/thread.md` to `$T/thread.md` and fill it **in conversation with 
 
 A search built to confirm a hypothesis finds the hypothesis. Keep a first pass broad, and record any hypothesis as one thing to test, not as the frame.
 
+Before Gate A, tell the user which Zotero library and collection the papers will go to (`zotero-cli library list`; the collection is the thread folder name).
+
 **Gate A: the user approves `thread.md`. Nothing is gathered before that.**
 
 ### 2 · Gather
@@ -48,7 +50,7 @@ python3 $S/expand.py --thread $T --seed <DOI> --direction forward   # per seed, 
 python3 $S/add_ids.py --thread $T --source <tool> --id <doi|arxiv> # finds from elsewhere
 ```
 
-Long runs go in the background. For several sources at once, run `gather.py --sources <one>` per source into shards and merge with `merge_shards.py`. Papers found by hand or by an LLM search tool go in through `add_ids.py` with an honest `--source`. Then `backfill_abstracts.py` for rows missing an abstract, and `corpus_report.py` for a readable picture of what came back.
+Long runs go in the background. Papers found by hand or by an LLM search tool go in through `add_ids.py` with an honest `--source`. Then `backfill_abstracts.py` for rows missing an abstract, and `corpus_report.py` for a readable picture of what came back.
 
 ### 3 · Dedupe
 
@@ -75,7 +77,7 @@ python3 $S/screen.py --thread $T --audit       # writes audit.csv
 
 Large corpora can be split across subagents, one batch range each. If so, check consistency with `screener_consistency.py --boundaries <last batch of each range>`, or double-screen a sample and run `screener_agreement.py`. If band 3 is more than a quarter of the corpus, the criteria are too vague: go back to Gate A instead of pushing on.
 
-**Gate B: the user reads `audit.csv` and overturns what is wrong.** Band 4 matters most: a wrongly dropped paper is invisible from then on.
+**Gate B: the user reads `audit.csv`, overturns what is wrong, and gives every band-3 row a final band (1, 2 or 4).** Then write it back with `screen.py --thread $T --apply $T/audit.csv --by <their initials>`. `status.py` will not move past Gate B while any band 3 remains. Band 4 matters most: a wrongly dropped paper is invisible from then on. Never re-run `--audit` before the user's edits are applied, because it overwrites `audit.csv`.
 
 Optional second cut for big corpora: `tier.py --emit/--apply` splits accepted rows into A (the review proper), B (background) and `-` (drop). Once a thread is tiered, the later steps take only tier A.
 
@@ -107,6 +109,8 @@ For each paper, read the working file and write `<workspace>/papers/<bibkey>.md`
 ```bash
 python3 $S/extract_check.py --thread $T        # every quote string-matched against the paper
 ```
+
+Always pass `--thread`, and keep `$T/extraction-workspace/` until Gate D is done: quotes are verified against those files, and without them the check only warns.
 
 Fix every error. **Gate D: the user reads a sample and judges whether each quote actually supports its claim.** The machine has only shown that the quotes exist.
 

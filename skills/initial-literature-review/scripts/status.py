@@ -34,7 +34,8 @@ def main() -> int:
     papers = c.papers_dir(t, a.papers)
     rows = c.read_rows(t / "candidates.csv")
     bands = Counter(r.get("band") or "" for r in rows)
-    accepted = [r for r in rows if r.get("band") in ACCEPTED]
+    accepted = c.in_scope(rows)          # tier A if tiered, else bands 1-2
+    borderline = bands.get("3", 0)
     ingested = [r for r in accepted if r.get("zotero_key")]
     extracted = [r for r in accepted
                  if (papers / f"{r['bibkey']}.md").exists()]
@@ -47,10 +48,13 @@ def main() -> int:
     defined = False
     if thread_md.exists():
         txt = thread_md.read_text(encoding="utf-8")
-        defined = "[TO FILL]" not in txt and "```queries" in txt
+        qs = c.thread_block(t, "queries") or ""
+        placeholder = any(ln.strip().startswith("<") for ln in qs.splitlines())
+        defined = "[TO FILL]" not in txt and "```queries" in txt and not placeholder
     line("1  Define", defined,
          "thread.md has a question, criteria and queries" if defined
-         else "thread.md missing, or still [TO FILL] / no ```queries block")
+         else "thread.md missing, still has [TO FILL] or <placeholder> queries, "
+              "or has no ```queries block")
 
     line("2  Gather", bool(rows), f"{len(rows)} candidates" if rows else "nothing gathered")
     keyed = sum(1 for r in rows if r.get("bibkey"))
@@ -63,12 +67,13 @@ def main() -> int:
          " ".join(f"{BANDS[b]}={bands.get(b,0)}" for b in BANDS) if rows else "—")
 
     audit = t / "audit.csv"
-    line("   Gate B", audit.exists(),
-         f"audit.csv drawn ({len(c.read_rows(audit))} rows)" if audit.exists()
-         else "run screen.py --audit, then read it")
+    line("   Gate B", audit.exists() and not borderline,
+         (f"audit.csv drawn ({len(c.read_rows(audit))} rows)" if audit.exists()
+          else "run screen.py --audit, then read it")
+         + (f" · {borderline} band-3 rows still need your decision" if borderline else ""))
 
     line("5  Ingest", bool(accepted) and len(ingested) == len(accepted),
-         f"{len(ingested)}/{len(accepted)} accepted rows in Zotero" if accepted
+         f"{len(ingested)}/{len(accepted)} in-scope rows in Zotero" if accepted
          else "nothing accepted yet")
     pdf = t / "pdf-status.md"
     line("   Gate C", pdf.exists(), "pdf-status.md written — fetch what is listed"
@@ -87,7 +92,7 @@ def main() -> int:
     if runs:
         last = json.loads(runs[-1].read_text(encoding="utf-8"))
         print(f"last run: {last.get('script')} at {last.get('at')}")
-    print(f"\nnext: {next_step(defined, rows, keyed, scr, audit, accepted, ingested, extracted, syn)}\n")
+    print(f"\nnext: {next_step(defined, rows, keyed, scr, audit, accepted, ingested, extracted, syn, borderline)}\n")
     return 0
 
 
@@ -95,7 +100,8 @@ def line(label, done, detail):
     print(f"  [{'x' if done else ' '}] {label:14s} {detail}")
 
 
-def next_step(defined, rows, keyed, scr, audit, accepted, ingested, extracted, syn) -> str:
+def next_step(defined, rows, keyed, scr, audit, accepted, ingested, extracted, syn,
+              borderline=0) -> str:
     if not defined:
         return "Gate A — write thread.md: the question, in/out criteria, and a ```queries block"
     if not rows:
@@ -106,6 +112,9 @@ def next_step(defined, rows, keyed, scr, audit, accepted, ingested, extracted, s
         return "screen.py --emit, have the agent band them, then screen.py --apply"
     if not audit.exists():
         return "screen.py --audit  (Gate B — then read audit.csv)"
+    if borderline:
+        return (f"Gate B — {borderline} band-3 rows need a human decision: set them to "
+                "1, 2 or 4 in audit.csv, then screen.py --apply audit.csv --by <initials>")
     if not accepted:
         return "nothing was accepted — check the criteria, this is a Gate A problem"
     if len(ingested) < len(accepted):

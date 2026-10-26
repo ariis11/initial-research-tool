@@ -238,7 +238,7 @@ def eprint(q: str, limit: int, mode: str = "relevance"):
     return rows, total
 
 
-def dblp(q: str, limit: int) -> list[dict]:
+def dblp(q: str, limit: int, mode: str = "relevance") -> list[dict]:
     """DBLP sits behind an anti-bot challenge, confirmed again on 23 September.
     We do not attempt to defeat it -- that is a deliberate access control, and
     circumventing it is both impolite and the kind of thing that gets the whole
@@ -285,8 +285,12 @@ def queries_from_thread(thread: Path) -> list[str]:
     body = c.thread_block(thread, "queries")
     if not body:
         return []
-    return [ln.strip() for ln in body.splitlines()
-            if ln.strip() and not ln.strip().startswith("#")]
+    out = [ln.strip() for ln in body.splitlines()
+           if ln.strip() and not ln.strip().startswith("#")]
+    if any(q.startswith("<") for q in out):
+        raise SystemExit("thread.md still has <placeholder> queries from the template. "
+                         "Replace them with real search strings first (Gate A).")
+    return out
 
 
 def main() -> int:

@@ -27,7 +27,7 @@ one writes a JSON record into `<thread>/runs/` so a run can be repeated and
 ## A typical run
 
 ```bash
-S=methods/initial-literature-review/scripts
+S=<skill folder>/scripts   # see ../reference/workflow.md for how to find it
 T=research/threads/my-topic
 
 python3 $S/status.py  --thread $T          # always safe; says what is next
@@ -64,7 +64,7 @@ query is precise enough that everything is a finite set. Measured on
 A 50,000× difference on arXiv between the same words quoted and unquoted. So
 each source runs in named modes and each is logged separately:
 
-- **`phrase`** — exact phrase, title+abstract. Small and precise, so it is **taken in full**.
+- **`phrase`** — exact phrase, title+abstract. Small and precise, so it is **taken in full** (safety cap `--phrase-limit`, default 2,000).
 - **`scoped`** — the words, title+abstract only. Capped by `--limit`, marked `[CAPPED]`.
 - **`relevance`** — the source offers no strict mode (Crossref, Semantic Scholar, ePrint). This is its top-N ranking and is labelled as such rather than presented as coverage.
 

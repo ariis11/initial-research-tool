@@ -19,7 +19,11 @@ If the repository is private, you need read access to it on GitHub first. To upd
 
 ## Set up, once
 
-Follow [`reference/setup.md`](skills/initial-literature-review/reference/setup.md): Python with PyYAML, Zotero with `zotero-cli`, and a private `~/.ilr-env` holding **your own** email and any API keys. Then ask Claude to run the access check.
+Follow [`reference/setup.md`](skills/initial-literature-review/reference/setup.md), about 30 minutes: Python 3.12+ with PyYAML, Zotero with its local API on, `zotero-cli`, and a private `~/.ilr-env` holding **your own** email. API keys (Semantic Scholar, Scopus, Web of Science) are optional, and the guide says how to get each one and what it adds. Then ask Claude to run the access check.
+
+## How it works
+
+[`reference/workflow.md`](skills/initial-literature-review/reference/workflow.md) walks through the whole process, from an idea to queries, sources, screening, Zotero, extraction and synthesis, and shows where every result is saved.
 
 ## Use
 
@@ -43,7 +47,7 @@ Every script is also a plain command-line tool and runs without Claude. See [`sc
 .claude-plugin/              plugin + marketplace manifests
 skills/initial-literature-review/
 ├── SKILL.md                 what Claude follows
-├── reference/               method, manual, sources, setup, design, evidence
+├── reference/               workflow (start here), setup, method, manual, sources, design, evidence
 ├── templates/               thread.md skeleton, extraction template and examples
 └── scripts/                 one CLI per step (stdlib Python + PyYAML)
 ```

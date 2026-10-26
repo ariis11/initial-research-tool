@@ -38,7 +38,7 @@ Different communities name the same idea differently, and one tool searching one
 <query three>
 ```
 
-Optional: which sources `gather.py` uses for this thread. Leave the block out for the default set (OpenAlex, Semantic Scholar, arXiv, IACR ePrint, plus Scopus when a key is configured). Known names: openalex, semanticscholar, crossref, arxiv, eprint, scopus, wos, dblp.
+Optional: which sources `gather.py` uses for this thread. Leave the block out for the default set (OpenAlex, Semantic Scholar, arXiv, IACR ePrint, plus Scopus when a key is configured). Known names: openalex, semanticscholar, crossref, arxiv, eprint, scopus (needs a key), wos (needs a key). The list replaces the default set, so name every source you want. DBLP and Google Scholar are searched by hand.
 
 ```sources
 # openalex semanticscholar arxiv eprint

@@ -1,6 +1,6 @@
 """Shared helpers for the initial-literature-review scripts.
 
-Deliberately stdlib-only for HTTP so the scripts run anywhere Python 3.11+ does.
+Deliberately stdlib-only for HTTP so the scripts run anywhere Python 3.12+ does.
 Everything here is deterministic: no model calls, no judgement.
 """
 from __future__ import annotations
